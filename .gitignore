@@ -1,0 +1,14 @@
+*.o
+*.ko
+*.mod
+*.mod.c
+*.order
+*.symvers
+*.cmd
+*.tmp
+*.log
+*.swp
+__pycache__/
+*.pyc
+/tmp/
+alarm_status.json

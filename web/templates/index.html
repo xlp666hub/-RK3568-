@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>多传感器布防告警终端</title>
+  <style>
+    :root {
+      --bg1: #f6f8fc;
+      --bg2: #eef3fb;
+      --card: rgba(255, 255, 255, 0.92);
+      --text: #1f2937;
+      --sub: #6b7280;
+      --line: #e5e7eb;
+
+      --blue: #2f7ed8;
+      --orange: #f39c12;
+      --red: #e74c3c;
+      --purple: #8e44ad;
+      --green: #16a34a;
+
+      --shadow: 0 10px 24px rgba(31, 41, 55, 0.08);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, var(--bg1) 0%, var(--bg2) 100%);
+    }
+
+    .wrap {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 28px 20px 40px;
+    }
+
+    .header {
+      margin-bottom: 22px;
+    }
+
+    .title {
+      margin: 0;
+      font-size: 40px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    .subtitle {
+      margin-top: 8px;
+      color: var(--sub);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(320px, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(6px);
+    }
+
+    .card h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+      font-weight: 700;
+      color: #374151;
+    }
+
+    .state-card {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .label {
+      color: var(--sub);
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .value {
+      font-size: 38px;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .value.small {
+      font-size: 30px;
+    }
+
+    .desc {
+      margin-top: 10px;
+      font-size: 15px;
+      color: #4b5563;
+      line-height: 1.7;
+    }
+
+    .explain-box {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+
+    .explain-title {
+      font-size: 14px;
+      color: var(--sub);
+      margin-bottom: 8px;
+    }
+
+    .explain-text {
+      font-size: 15px;
+      color: #374151;
+      line-height: 1.8;
+    }
+
+    .badge {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 9px 15px;
+      border-radius: 999px;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .state-idle  { background: var(--blue); }
+    .state-armed { background: var(--orange); }
+    .state-alarm { background: var(--red); }
+    .state-mute  { background: var(--purple); }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(140px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .metric-box {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .metric-name {
+      font-size: 13px;
+      color: var(--sub);
+      margin-bottom: 6px;
+    }
+
+    .metric-value {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .footer {
+      margin-top: 22px;
+      color: var(--sub);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .hint {
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    @media (max-width: 960px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .state-card {
+        grid-template-columns: 1fr;
+      }
+
+      .title {
+        font-size: 30px;
+      }
+
+      .value {
+        font-size: 32px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <h1 class="title">多传感器布防告警终端</h1>
+      <div class="subtitle">
+        基于 RK3568 + Linux 驱动 + 用户态状态机 + Web 轻量展示页面。<br>
+        页面每秒自动刷新一次，用于展示当前布防状态、光照信息、运动信息与告警相关数据。
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card state-card">
+        <div>
+          <h2>当前状态</h2>
+          <div class="label">系统当前工作模式</div>
+          <div class="value small" id="stateText">--</div>
+          <div class="badge state-idle" id="stateBadge">--</div>
+          <div class="desc" id="updatedText">最近更新时间：--</div>
+        </div>
+
+        <div class="explain-box">
+          <div class="explain-title">中文解释</div>
+          <div class="explain-text" id="stateExplain">
+            --
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>环境光监测</h2>
+        <div class="label">光照值（lux）</div>
+        <div class="value" id="lux">--</div>
+        <div class="desc" id="darkText">暗环境：--</div>
+      </div>
+
+      <div class="card">
+        <h2>运动检测</h2>
+        <div class="label">当前判定结果</div>
+        <div class="value small" id="motionText">--</div>
+        <div class="desc" id="motionHitText">连续命中次数：--</div>
+      </div>
+
+      <div class="card">
+        <h2>温度信息</h2>
+        <div class="label">当前温度</div>
+        <div class="value" id="temp">--</div>
+        <div class="desc">单位：摄氏度</div>
+      </div>
+
+      <div class="card">
+        <h2>传感器变化量</h2>
+        <div class="metrics">
+          <div class="metric-box">
+            <div class="metric-name">加速度变化量</div>
+            <div class="metric-value" id="accelDelta">--</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-name">角速度变化量</div>
+            <div class="metric-value" id="gyroDelta">--</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span class="hint">提示：</span>
+      当前页面为监控展示页，不直接参与底层驱动控制。驱动负责数据采集与设备控制，用户态程序负责状态机逻辑，Web 页面负责可视化展示。
+    </div>
+  </div>
+
+  <script>
+    function setState(state) {
+      const text = document.getElementById("stateText");
+      const badge = document.getElementById("stateBadge");
+      const explain = document.getElementById("stateExplain");
+
+      text.textContent = state || "--";
+      badge.textContent = state || "--";
+
+      badge.className = "badge";
+      if (state === "IDLE") {
+        badge.classList.add("state-idle");
+        explain.textContent = "空闲/撤防状态。系统不触发告警，蓝灯常亮，适合日常查看与调试。";
+      } else if (state === "ARMED") {
+        badge.classList.add("state-armed");
+        explain.textContent = "布防状态。系统开始监测环境光和运动变化，若满足条件将进入告警状态。";
+      } else if (state === "ALARM") {
+        badge.classList.add("state-alarm");
+        explain.textContent = "告警状态。系统检测到满足告警条件的异常情况，红灯闪烁并触发蜂鸣器。";
+      } else if (state === "MUTE") {
+        badge.classList.add("state-mute");
+        explain.textContent = "静音状态。系统仍保留告警后的状态信息，但蜂鸣器关闭，便于人工干预。";
+      } else {
+        badge.classList.add("state-idle");
+        explain.textContent = "状态未知。";
+      }
+    }
+
+    async function updateStatus() {
+      try {
+        const res = await fetch("/api/status");
+        const data = await res.json();
+
+        setState(data.state);
+
+        document.getElementById("lux").textContent = data.lux ?? "--";
+        document.getElementById("darkText").textContent =
+          "暗环境：" + ((data.dark ?? 0) ? "是" : "否");
+
+        document.getElementById("motionText").textContent =
+          (data.motion ?? 0) ? "检测到" : "无";
+
+        document.getElementById("motionHitText").textContent =
+          "连续命中次数：" + (data.motion_hits ?? 0);
+
+        document.getElementById("temp").textContent = data.temp ?? "--";
+        document.getElementById("accelDelta").textContent = data.accel_delta ?? "--";
+        document.getElementById("gyroDelta").textContent = data.gyro_delta ?? "--";
+
+        document.getElementById("updatedText").textContent =
+          "最近更新时间戳：" + (data.timestamp ?? 0);
+
+      } catch (err) {
+        console.error("获取状态失败：", err);
+      }
+    }
+
+    updateStatus();
+    setInterval(updateStatus, 1000);
+  </script>
+</body>
+</html>
